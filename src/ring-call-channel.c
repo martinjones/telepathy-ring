@@ -288,8 +288,10 @@ ring_call_channel_emit_initial(RingMediaChannel *_self)
   char const *message = "";
   TpChannelGroupChangeReason reason = 0;
   TpChannelGroupFlags add = 0, del = 0;
+  TpHandle initiator = tp_base_channel_get_initiator (base);
 
-  tp_intset_add(member_set, tp_base_channel_get_initiator (base));
+  if (initiator != 0)
+    tp_intset_add(member_set, initiator);
 
   if (!tp_base_channel_is_requested (base)) {
     /* Incoming call */
@@ -305,6 +307,10 @@ ring_call_channel_emit_initial(RingMediaChannel *_self)
     remote_pending_set = tp_intset_new();
     tp_intset_add(remote_pending_set, priv->initial_remote);
     add |= TP_CHANNEL_GROUP_FLAG_CAN_RESCIND;
+    if (initiator == 0) {
+      /* Not initiated by tp-ring. Add self as local */
+      tp_intset_add(member_set, self_handle);
+    }
   }
   else {
     /* Outgoing call, but without handle */
